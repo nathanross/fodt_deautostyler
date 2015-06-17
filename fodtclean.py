@@ -16,11 +16,13 @@ def readxml(l_f):
     with open(l_f, mode='r', encoding='UTF-8') as f:
         return Detree.fromstring(f.read())
 
-def writexml(l_f, o_etree):
+def xml_to_str(o_etree):
+    return '<?xml version="1.0" encoding="UTF-8"?>\n'.encode('utf-8')+\
+        Xetree.tostring(o_etree)
+    
+def write_utf8(l_f, data):
     with open(l_f, mode='wb') as f:
-        s_xml=Xetree.tostring(o_etree)
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n'.encode('utf-8'))
-        f.write(s_xml)
+        f.write(data)
         f.flush()
         
 _NAMESPACES={}
@@ -42,12 +44,16 @@ class ODTree:
 
     # returns key and value of first attribute with the passed
     # key-end, regardless of namespace
+
+    @staticmethod
+    def namespace_match(text, key):
+        pattern=re.compile('^.*\}'+key+'$')
+        return re.match(pattern, text)
     
     @staticmethod
     def item_match(el, key):
-        pattern = re.compile('^.*\}'+key+'$')
         for curkey in el.keys():
-            if re.match(pattern, curkey):
+            if ODTree.namespace_match(key, curkey):
                 return {'key': curkey, 'value': el.get(curkey)}
         return None    
     
@@ -68,11 +74,33 @@ def deautostyler(fodt_etree_in):
             del x.attrib[style['key']]
     return fodt_etree
 
+def first_deletion_pass(fodt_etree_in):
+    # mark redundant open tags (tags with contents,
+    #  where the tag's existence doesnt have any effect
+    #  on the contents, document, etc.) for deletion
+    # remove closed tags.
+    
+    fodt_etree = deepcopy(fodt_etree_in)    
+    it_body=ODTree.find(fodt_etree, 'office', 'body').iter()
+    for x in it_body:
+        if x.tag == ODTree.NAMESPACES['text']+'span' and not \
+           ODTree.item_match(x, 'style-name'):
+            x.tag='DELETEME'    
+    return fodt_etree
+
+def second_deletion_pass(fodt_str_in):
+    fodt_str=fodt_str_in
+    fodt_str=re.sub('</?DELETEME[^<>]*>'.encode('utf-8'),b'', fodt_str)
+    return fodt_str
+
 def main(l_fodt, l_fodt_out=None):
     l_out=l_fodt_out if l_fodt_out else l_fodt
     fodt=readxml(l_fodt)
     fodt=deautostyler(fodt)
-    writexml(l_out, fodt)
+    fodt=first_deletion_pass(fodt)
+    fodt_str=xml_to_str(fodt)
+    fodt_str=second_deletion_pass(fodt_str)    
+    write_utf8(l_out, fodt_str)
     
 if __name__=='__main__':
     main(sys.argv[1])
