@@ -1,6 +1,6 @@
 #!/bin/bash
 # requires inotify-tools
-[ $1 ] || echo "error, first arg must be file to watch" && exit 1
+[ $1 ] || ( echo "error, first arg must be file to watch" && exit 1 )
 while [ -e "$1" ] && [ -f "$1" ];
 do
     inotifywait -e modify "$1";
