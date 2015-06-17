@@ -3,25 +3,38 @@ import sys
 import os
 from os import path
 from copy import deepcopy
-import defusedxml.ElementTree as etree
+import defusedxml.ElementTree as Detree
+# we need to use xml.etree as well because while
+# defusedxml's () fn is really just a callthrough
+# to xml's tostring, defusedxml doesn't also
+# have a facade for its register_namespace fn.
+# required for correct serialization
+import xml.etree.ElementTree as Xetree
 import re
 
 def readxml(l_f):
     with open(l_f, mode='r', encoding='UTF-8') as f:
-        return etree.fromstring(f.read())
+        return Detree.fromstring(f.read())
 
-def writexml(l_f, x_etree):
+def writexml(l_f, o_etree):
     with open(l_f, mode='wb') as f:
-        s_xml=etree.tostring(x_etree)
+        s_xml=Xetree.tostring(o_etree)
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n'.encode('utf-8'))
         f.write(s_xml)
         f.flush()
         
 _NAMESPACES={}
 for x in ['office', 'style', 'text', 'table', 'drawing', 'meta', 'datastyle', 'svg-compatible', 'chart', 'dr3d', 'form', 'script', 'config']:
-    _NAMESPACES[x] = '{'+ 'urn:oasis:names:tc:opendocument:xmlns:{}:1.0'.format(x) + '}'
-
+    uri='urn:oasis:names:tc:opendocument:xmlns:{}:1.0'.format(x)
+    _NAMESPACES[x] = '{'+uri+'}'
+    Xetree.register_namespace(x, uri)
+    
 class ODTree:
     NAMESPACES=_NAMESPACES
+
+    # the below three methods basically reproduce relatively
+    # new (3.2+) search-by-namespace fn-ality also w/o facade
+    # in defusedxml elements
     
     @staticmethod
     def find(el, namespace, key):
