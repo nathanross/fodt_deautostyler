@@ -51,15 +51,15 @@ def deautostyler(fodt_etree_in):
     it_body=ODTree.find(fodt_etree, 'office', 'body').iter()
     for x in it_body:
         style=ODTree.item_match(x, 'style-name')
-        if style['value'] in set_autostyles:
-            del x.attrib(style['key'])
+        if style and style['value'] in set_autostyles:
+            del x.attrib[style['key']]
     return fodt_etree
 
 def main(l_fodt, l_fodt_out=None):
     l_out=l_fodt_out if l_fodt_out else l_fodt
-    fodt=_readxml(l_fodt)
+    fodt=readxml(l_fodt)
     fodt=deautostyler(fodt)
-    _writexml(l_out, fodt)
+    writexml(l_out, fodt)
     
 if __name__=='__main__':
     main(sys.argv[1])
