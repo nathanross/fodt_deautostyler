@@ -59,9 +59,7 @@ class ODTree:
     @staticmethod
     def item_match(el, key):
         for curkey in el.keys():
-            print("curkey:"+curkey)
             if ODTree.namespace_match(curkey, key):
-                print("match")
                 return {'key': curkey, 'value': el.get(curkey)}
         return None    
     
