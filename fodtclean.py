@@ -12,6 +12,12 @@ import defusedxml.ElementTree as Detree
 import xml.etree.ElementTree as Xetree
 import re
 
+VERBOSE=True
+
+def debug(msg):
+    if VERBOSE:
+        print(msg)
+
 def readxml(l_f):
     with open(l_f, mode='r', encoding='UTF-8') as f:
         return Detree.fromstring(f.read())
@@ -53,7 +59,9 @@ class ODTree:
     @staticmethod
     def item_match(el, key):
         for curkey in el.keys():
-            if ODTree.namespace_match(key, curkey):
+            print("curkey:"+curkey)
+            if ODTree.namespace_match(curkey, key):
+                print("match")
                 return {'key': curkey, 'value': el.get(curkey)}
         return None    
     
@@ -67,6 +75,7 @@ def deautostyler(fodt_etree_in):
     set_autostyles=set()
     for x in el_autostyles.getchildren():
         set_autostyles.add(ODTree.get(x, 'style', 'name'))
+        el_autostyles.remove(x)
     it_body=ODTree.find(fodt_etree, 'office', 'body').iter()
     for x in it_body:
         style=ODTree.item_match(x, 'style-name')
@@ -99,7 +108,7 @@ def main(l_fodt, l_fodt_out=None):
     fodt=deautostyler(fodt)
     fodt=first_deletion_pass(fodt)
     fodt_str=xml_to_str(fodt)
-    fodt_str=second_deletion_pass(fodt_str)    
+    fodt_str=second_deletion_pass(fodt_str)
     write_utf8(l_out, fodt_str)
     
 if __name__=='__main__':
