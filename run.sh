@@ -13,10 +13,12 @@ error() {
 
 main() {
     isFile "$1" || error "error, first arg must be file to clean"
-    [ $2 ] || error "error, second arg must be wait or once" 
-    pyvenv-3.4 env
-    source ${DIR}/env/bin/activate
-    pip install -r ${DIR}/requirements.txt
+    [ $2 ] || error "error, second arg must be wait or once"
+    if [ ! -e ${DIR}/env ]; then
+        pyvenv-3.4 ${DIR}/env
+        source ${DIR}/env/bin/activate
+        pip install -r ${DIR}/requirements.txt
+    fi
     if [[ $2 == "wait" ]]; then
         while [ -e "$1" ] && [ -f "$1" ];
         do
